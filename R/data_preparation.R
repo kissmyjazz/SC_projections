@@ -109,11 +109,10 @@ df_summary_label_spread <- dcast.data.table(name ~ side + case, value.var = "lab
   mutate_if(is.numeric, ~round(.x, 1)) %>% 
   arrange(desc(ipsi_I6310_488), desc(ipsi_I6310_555))
 
+
 df_summary_label_tall <- df_summary_label_spread %>% 
   gather(key = "hemisphere", value = "label", -name) %>% 
   mutate(hemisphere = factor(hemisphere, levels = names(df_summary_label_spread)[2:7]))
-
-
 
 g_raster <- ggplot(df_summary_label_tall, 
                    aes(y = fct_reorder(name, label, .fun = mean, na.rm = TRUE), 
