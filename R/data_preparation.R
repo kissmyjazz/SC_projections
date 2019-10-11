@@ -3,6 +3,8 @@ library(here)
 library(data.table)
 library(openxlsx)
 library(papaja)
+library(data.table)
+library(shadowtext)
 theme_set(theme_apa(base_size = 15)) 
 
 fp_6310_488 <- here("raw_data", "Neurolucida", "I6310_488_counts")
@@ -15,7 +17,15 @@ fp_counts_ipsi_spread <- here("derived_data", "summary_counts_ipsi_spread.csv")
 fp_counts_contra_spread <- here("derived_data", "summary_counts_contra_spread.csv")
 fp_label_ipsi_spread <- here("derived_data", "summary_label_ipsi_spread.csv")
 fp_label_contra_spread <- here("derived_data", "summary_label_contra_spread.csv")
+fp_m6344 <- here("raw_data", "Adam_data", "m6344_contra_ipsi.csv")
+fp_m6328 <- here("raw_data", "Adam_data", "m6328_contra_ipsi.csv")
+
 fp_heatmap <- here("figures", "manual_count_heatmap.pdf")
+fp_heatmap_adam <- here("figures", "automatic_count_heatmap.pdf")
+
+normalize_100 <- function(x) {
+  return(100 * (x- min(x)) /(max(x)-min(x)))
+}
 
 i6310_488_flist <- list.files(fp_6310_488, pattern = "*.xlsx", full.names = TRUE)
 i6310_555_flist <- list.files(fp_6310_555, pattern = "*.xlsx", full.names = TRUE)
@@ -130,4 +140,37 @@ g_raster <- ggplot(df_summary_label_tall,
 
 pdf(fp_heatmap, width = 12, height = 12, useDingbats = FALSE)
 g_raster
+dev.off()
+
+# make heatmap for high-throuhput data
+df_m6344 <- read_csv(fp_m6344) %>% rename("ipsi_yellow"= ipsi, "contra_yellow" = contra)
+df_m6328 <- read_csv(fp_m6328) %>% rename("ipsi_orange"= ipsi, "contra_orange" = contra)
+df_label_ipsi <- read_csv(fp_label_ipsi_spread) %>% select(name)
+df_adam <- merge(df_m6344, df_m6328) %>% merge(df_label_ipsi) %>% 
+  mutate_if(is.numeric, normalize_100) %>%
+  mutate_if(is.numeric, ~round(.x, 1)) %>%
+  select(name, starts_with("ipsi"), everything())
+
+df_adam_tall <- df_adam %>% 
+  gather(key = "hemisphere", value = "label", -name) %>% 
+  mutate(hemisphere = factor(hemisphere, levels = names(df_adam)[2:5]))
+
+g_raster_auto <- ggplot(df_adam_tall, 
+                   aes(y = fct_reorder(name, label, .fun = mean, na.rm = TRUE), 
+                       x = hemisphere, fill = label, 
+                       label = label)) +
+  geom_raster() + geom_text(color="red2") + 
+  scale_fill_viridis_c() + labs(y = NULL, fill = "signal\nintensity %", 
+                                x = "injection case & hemisphere", 
+                                title = "High-throughput pipeline signal in prefrontal cortex") + 
+  scale_x_discrete(labels = c("yellow ipsi", "orange ipsi", "yellow contra", 
+                              "orange contra")) +
+  theme(axis.text.x = element_shadowtext(size = 12, 
+                                   colour = rep(c("#FFF88F", "#FF7F00"), 2),
+                                   face = "plain", lineheight = 1, 
+                                   margin = margin(0.3, 0.3, 0.3, 0.3, "cm")),
+        plot.title = element_text(size = 16, hjust = 0.5))
+
+pdf(fp_heatmap_adam, width = 12, height = 12, useDingbats = FALSE)
+g_raster_auto
 dev.off()
