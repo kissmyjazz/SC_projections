@@ -3,7 +3,6 @@ library(here)
 library(data.table)
 library(openxlsx)
 library(papaja)
-library(data.table)
 library(shadowtext)
 theme_set(theme_apa(base_size = 15)) 
 
