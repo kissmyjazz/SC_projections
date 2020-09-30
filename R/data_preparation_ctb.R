@@ -132,9 +132,7 @@ df_summary_label_spread <- dcast.data.table(name ~ side + case, value.var = "lab
                                             data = as.data.table(df_summary_counts_all)) %>% 
   select(name, starts_with("ipsi"), everything()) %>% na.omit() %>% 
   mutate_if(is.numeric, ~round(.x, 1)) %>% 
-  arrange(desc(ipsi_I6310_488), desc(ipsi_I6310_555))  %>% 
-  # take first 30 sections
-  slice(1:30)
+  arrange(desc(ipsi_I6313_555), desc(ipsi_I6310_555))
 
 
 df_summary_label_tall <- df_summary_label_spread %>% 
@@ -155,7 +153,7 @@ g_raster <- ggplot(df_summary_label_tall,
                                    colour = rep(c("limegreen", "firebrick2", "darkorchid3"), 2)),
         plot.title = element_text(size = 16, hjust = 0.5))
 
-pdf(fp_heatmap, width = 12, height = 12, useDingbats = FALSE)
+pdf(fp_heatmap, width = 12, height = 52, useDingbats = FALSE)
 g_raster
 dev.off()
 
